@@ -82,6 +82,8 @@ DygraphOptions.AXIS_STRING_MAPPINGS_ = {
   'Y' : 0,
   'y1' : 0,
   'Y1' : 0,
+  'x2' : 1,
+  'X2' : 1,
   'y2' : 1,
   'Y2' : 1
 };
@@ -125,7 +127,7 @@ DygraphOptions.prototype.reparseSeries = function() {
   this.labels_ = labels.slice(1);
 
   this.yAxes_ = [ { series : [], options : {}} ]; // Always one axis at least.
-  this.xAxis_ = { options : {} };
+  this.xAxis_ = [{ options : {} }];
   this.series_ = {};
 
   // Series are specified in the series element:
@@ -153,7 +155,10 @@ DygraphOptions.prototype.reparseSeries = function() {
       options : optionsForSeries };
 
     if (!this.yAxes_[yAxis]) {
-      this.yAxes_[yAxis] =  { series : [ seriesName ], options : {} };
+      this.yAxes_[yAxis] =  {
+        series : [ seriesName ],
+        options : {}
+      };
     } else {
       this.yAxes_[yAxis].series.push(seriesName);
     }
@@ -164,7 +169,10 @@ DygraphOptions.prototype.reparseSeries = function() {
   if (this.yAxes_.length > 1) {
     utils.update(this.yAxes_[1].options, axis_opts["y2"] || {});
   }
-  utils.update(this.xAxis_.options, axis_opts["x"] || {});
+  if (this.xAxis_.length > 1) {
+    utils.update(this.xAxis_[0].options, axis_opts["x2"] || {});
+  }
+  utils.update(this.xAxis_[0].options, axis_opts["x"] || {});
 
   // For "production" code, this gets removed by uglifyjs.
   if (process.env.NODE_ENV != 'production') {
@@ -213,7 +221,7 @@ DygraphOptions.prototype.getGlobalDefault_ = function(name) {
 DygraphOptions.prototype.getForAxis = function(name, axis) {
   var axisIdx;
   var axisString;
-
+  var axisType = [];
   // Since axis can be a number or a string, straighten everything out here.
   if (typeof(axis) == 'number') {
     axisIdx = axis;
@@ -221,18 +229,25 @@ DygraphOptions.prototype.getForAxis = function(name, axis) {
   } else {
     if (axis == "y1") { axis = "y"; } // Standardize on 'y'. Is this bad? I think so.
     if (axis == "y") {
+      axisType = this.yAxes_;
       axisIdx = 0;
     } else if (axis == "y2") {
+      axisType = this.yAxes_;
       axisIdx = 1;
     } else if (axis == "x") {
-      axisIdx = -1; // simply a placeholder for below.
+      axisType = this.xAxis_;
+      axisIdx = 0; // simply a placeholder for below.
+    } else if (axis == "x2") {
+      axisIdx = 1;
+      axisType = this.xAxis_;
     } else {
       throw "Unknown axis " + axis;
     }
     axisString = axis;
   }
 
-  var userAxis = (axisIdx == -1) ? this.xAxis_ : this.yAxes_[axisIdx];
+  var userAxis = axisType[axisIdx];
+  // var userAxis = (axisIdx == -1) ? this.xAxis_ : this.yAxes_[axisIdx];
 
   // Search the user-specified axis option first.
   if (userAxis) { // This condition could be removed if we always set up this.yAxes_ for y2.
@@ -345,8 +360,9 @@ DygraphOptions.prototype.validateOptions_ = function() {
     }
   };
 
-  var optionsDicts = [this.xAxis_.options,
+  var optionsDicts = [this.xAxis_[0].options,
                       this.yAxes_[0].options,
+                      this.xAxis_[1] && this.xAxis_[1].options,
                       this.yAxes_[1] && this.yAxes_[1].options,
                       this.global_,
                       this.user_,

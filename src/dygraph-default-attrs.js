@@ -110,6 +110,16 @@ var DEFAULT_ATTRS = {
       independentTicks: true,
       ticker: DygraphTickers.dateTicker
     },
+    x2: {
+      pixelsPerLabel: 70,
+      axisLabelWidth: 60,
+      axisLabelFormatter: utils.dateAxisLabelFormatter,
+      valueFormatter: utils.dateValueFormatter,
+      drawGrid: true,
+      drawAxis: true,
+      independentTicks: true,
+      ticker: DygraphTickers.dateTicker
+    },
     y: {
       axisLabelWidth: 50,
       pixelsPerLabel: 30,

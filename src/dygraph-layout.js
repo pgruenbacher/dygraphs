@@ -170,6 +170,10 @@ DygraphLayout.prototype.setXTicks = function(xTicks) {
   this.xTicks_ = xTicks;
 };
 
+DygraphLayout.prototype.setX2Ticks = function(x2Ticks) {
+  this.x2Ticks_ = x2Ticks;
+};
+
 // TODO(danvk): add this to the Dygraph object's API or move it into Layout.
 DygraphLayout.prototype.setYAxes = function (yAxes) {
   this.yAxes_ = yAxes;

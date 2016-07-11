@@ -96,10 +96,11 @@ axes.prototype.willDrawChart = function(e) {
 
   if (!g.getOptionForAxis('drawAxis', 'x') &&
       !g.getOptionForAxis('drawAxis', 'y') &&
+      !g.getOptionForAxis('drawAxis', 'x2') &&
       !g.getOptionForAxis('drawAxis', 'y2')) {
     return;
   }
-  
+
   // Round pixels to half-integer boundaries for crisper drawing.
   function halfUp(x)  { return Math.round(x) + 0.5; }
   function halfDown(y){ return Math.round(y) - 0.5; }
@@ -126,6 +127,7 @@ axes.prototype.willDrawChart = function(e) {
 
   var labelStyles = {
     x : makeLabelStyle('x'),
+    x2 : makeLabelStyle('x2'),
     y : makeLabelStyle('y'),
     y2 : makeLabelStyle('y2')
   };
@@ -134,11 +136,12 @@ axes.prototype.willDrawChart = function(e) {
     /*
      * This seems to be called with the following three sets of axis/prec_axis:
      * x: undefined
+     * x: x2
      * y: y1
      * y: y2
      */
     var div = document.createElement('div');
-    var labelStyle = labelStyles[prec_axis == 'y2' ? 'y2' : axis];
+    var labelStyle = labelStyles[prec_axis ? prec_axis : axis];
     for (var name in labelStyle) {
       if (labelStyle.hasOwnProperty(name)) {
         div.style[name] = labelStyle[name];
@@ -260,7 +263,63 @@ axes.prototype.willDrawChart = function(e) {
     }
   }
 
+  if (g.getOptionForAxis('drawAxis', 'x2')) {
+    if (layout.x2ticks) {
+      var getAxisOption = makeOptionGetter('x2');
+      for (i = 0; i < layout.xticks.length; i++) {
+        tick = layout.xticks[i];
+        x = area.x + tick[0] * area.w;
+        y = area.y + area.h;
+
+        /* Tick marks are currently clipped, so don't bother drawing them.
+        context.beginPath();
+        context.moveTo(halfUp(x), halfDown(y));
+        context.lineTo(halfUp(x), halfDown(y + this.attr_('axisTickSize')));
+        context.closePath();
+        context.stroke();
+        */
+
+        label = makeDiv(tick[1], 'x', 'x2');
+        label.style.textAlign = 'center';
+        label.style.top = (y + getAxisOption('axisTickSize')) + 'px';
+
+        var left = (x - getAxisOption('axisLabelWidth')/2);
+        if (left + getAxisOption('axisLabelWidth') > canvasWidth) {
+          left = canvasWidth - getAxisOption('axisLabelWidth');
+          label.style.textAlign = 'right';
+        }
+        if (left < 0) {
+          left = 0;
+          label.style.textAlign = 'left';
+        }
+
+        label.style.left = left + 'px';
+        label.style.width = getAxisOption('axisLabelWidth') + 'px';
+        containerDiv.appendChild(label);
+        console.log('push x2 label', label);
+        this.xlabels_.push(label);
+      }
+    }
+
+    context.strokeStyle = g.getOptionForAxis('axisLineColor', 'x2');
+    context.lineWidth = g.getOptionForAxis('axisLineWidth', 'x2');
+    context.beginPath();
+    var axisY;
+    if (g.getOption('drawAxesAtZero')) {
+      var r = g.toPercentYCoord(0, 0);
+      if (r > 1 || r < 0) r = 1;
+      axisY = halfDown(area.y + r * area.h);
+    } else {
+      axisY = halfDown(area.y + area.h);
+    }
+    context.moveTo(halfUp(area.x), axisY);
+    context.lineTo(halfUp(area.x + area.w), axisY);
+    context.closePath();
+    context.stroke();
+  }
+
   if (g.getOptionForAxis('drawAxis', 'x')) {
+
     if (layout.xticks) {
       var getAxisOption = makeOptionGetter('x');
       for (i = 0; i < layout.xticks.length; i++) {

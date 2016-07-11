@@ -452,7 +452,7 @@ Dygraph.prototype.getOptionForAxis = function(name, axis) {
 
 /**
  * @private
- * @param {string} axis The name of the axis (i.e. 'x', 'y' or 'y2')
+ * @param {string} axis The name of the axis (i.e. 'x', 'y', 'x2', or 'y2')
  * @return { ... } A function mapping string -> option value
  */
 Dygraph.prototype.optionsViewForAxis_ = function(axis) {
@@ -2687,6 +2687,19 @@ Dygraph.prototype.setXAxisOptions_ = function(isDate) {
     this.attrs_.axes.x.ticker = DygraphTickers.numericTicks;
     this.attrs_.axes.x.axisLabelFormatter = this.attrs_.axes.x.valueFormatter;
   }
+
+   if (isDate) {
+    this.attrs_.axes.x2.valueFormatter = utils.dateValueFormatter;
+    this.attrs_.axes.x2.ticker = DygraphTickers.dateTicker;
+    this.attrs_.axes.x2.axisLabelFormatter = utils.dateAxisLabelFormatter;
+  } else {
+    // TODO(danvk): use Dygraph.numberValueFormatter here?
+    /** @private (shut up, jsdoc!) */
+    this.attrs_.axes.x2.valueFormatter = function(x) { return x; };
+    this.attrs_.axes.x2.ticker = DygraphTickers.numericTicks;
+    this.attrs_.axes.x2.axisLabelFormatter =
+      this.attrs_.axes.x2.valueFormater;
+  }
 };
 
 /**
@@ -2879,6 +2892,11 @@ Dygraph.prototype.parseArray_ = function(data) {
     this.attrs_.axes.x.ticker = DygraphTickers.dateTicker;
     this.attrs_.axes.x.axisLabelFormatter = utils.dateAxisLabelFormatter;
 
+    // Some intelligent defaults for a date x-axis.
+    this.attrs_.axes.x2.valueFormatter = utils.dateValueFormatter;
+    this.attrs_.axes.x2.ticker = DygraphTickers.dateTicker;
+    this.attrs_.axes.x2.axisLabelFormatter = utils.dateAxisLabelFormatter;
+
     // Assume they're all dates.
     var parsedData = utils.clone(data);
     for (i = 0; i < data.length; i++) {
@@ -2901,6 +2919,11 @@ Dygraph.prototype.parseArray_ = function(data) {
     this.attrs_.axes.x.valueFormatter = function(x) { return x; };
     this.attrs_.axes.x.ticker = DygraphTickers.numericTicks;
     this.attrs_.axes.x.axisLabelFormatter = utils.numberAxisLabelFormatter;
+
+    this.attrs_.axes.x2.valueFormatter = function(x) { return x; };
+    this.attrs_.axes.x2.ticker = DygraphTickers.numericTicks;
+    this.attrs_.axes.x2.axisLabelFormatter = utils.numberAxisLabelFormatter;
+
     return data;
   }
 };
@@ -3276,7 +3299,7 @@ Dygraph.prototype.visibility = function() {
  *
  * @param {number|number[]|object} num the series index or an array of series indices
  *                                     or a boolean array of visibility states by index
- *                                     or an object mapping series numbers, as keys, to 
+ *                                     or an object mapping series numbers, as keys, to
  *                                     visibility state (boolean values)
  * @param {boolean} value the visibility state expressed as a boolean
  */
