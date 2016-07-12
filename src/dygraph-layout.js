@@ -290,6 +290,18 @@ DygraphLayout.prototype._evaluateLineTicks = function() {
       this.xticks.push([pos, label]);
     }
   }
+  console.log('this.x2Ticks_', this.x2Ticks_);
+  if (this.x2Ticks_) {
+    this.x2ticks = [];
+    for (i = 0; i < this.x2Ticks_.length; i++) {
+      tick = this.x2Ticks_[i];
+      label = tick.label;
+      pos = this.dygraph_.toPercentXCoord(tick.v);
+      if ((pos >= 0.0) && (pos < 1.0)) {
+        this.x2ticks.push([pos, label]);
+      }
+    }
+  }
 
   this.yticks = [];
   for (i = 0; i < this.yAxes_.length; i++ ) {
@@ -303,6 +315,7 @@ DygraphLayout.prototype._evaluateLineTicks = function() {
       }
     }
   }
+  console.log('output', this.x2ticks, this.xticks);
 };
 
 DygraphLayout.prototype._evaluateAnnotations = function() {

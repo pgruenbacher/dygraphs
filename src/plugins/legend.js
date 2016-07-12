@@ -233,7 +233,7 @@ Legend.generateLegendHTML = function(g, x, sel_points, oneEmWidth, row) {
   var labelToSeries = {};
   var labels = g.getLabels();
   if (labels) {
-    for (var i = 1; i < labels.length; i++) {
+    for (var i = g.numXAxes(); i < labels.length; i++) {
       var series = g.getPropertiesForSeries(labels[i]);
       var strokePattern = g.getOption('strokePattern', labels[i]);
       var seriesData = {
@@ -354,7 +354,7 @@ generateLegendDashHTML = function(strokePattern, color, oneEmWidth) {
   var normalizedPattern = [];
   var loop;
 
-  // Compute the length of the pixels including the first segment twice, 
+  // Compute the length of the pixels including the first segment twice,
   // since we repeat it.
   for (i = 0; i <= strokePattern.length; i++) {
     strokePixelLength += strokePattern[i%strokePattern.length];

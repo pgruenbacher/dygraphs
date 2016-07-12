@@ -27,9 +27,19 @@ DefaultHandler.prototype = new DygraphDataHandler();
 DefaultHandler.prototype.extractSeries = function(rawData, i, options) {
   // TODO(danvk): pre-allocate series here.
   var series = [];
+  // console.log('options', options);
   var logScale = options.get('logscale');
   for ( var j = 0; j < rawData.length; j++) {
     var x = rawData[j][0];
+    // FIX!
+    console.log('options', options);
+    if (options.user_.hasSecondaryXAxis) {
+      var label = options.labels_[i - 2];
+      var serie = options.series_[label];
+      if (serie.options && serie.options.xAxis === "x2") {
+        x = rawData[j][1];
+      }
+    }
     var point = rawData[j][i];
     if (logScale) {
       // On the log scale, points less than zero do not exist.

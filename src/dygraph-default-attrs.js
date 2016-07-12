@@ -98,6 +98,7 @@ var DEFAULT_ATTRS = {
 
   plugins: [ ],
 
+  hasSecondaryXAxis: false,
   // per-axis options
   axes: {
     x: {

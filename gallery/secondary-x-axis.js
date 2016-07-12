@@ -1,37 +1,66 @@
 /*global Gallery,Dygraph,data */
 Gallery.register(
-  'annotations-native',
+  'secondary-x',
   {
-    name: 'Secondary Axis',
+    name: 'Secondary X Axis',
+    title: 'Chart with per-series properties',
     setup: function(parent) {
-      parent.innerHTML =
-        "<p>This test demonstrates how annotations can be used with " +
-        "<a href='http://dygraphs.com/data.html#array'>native-format</a> data.</p>" +
-        "<div id='demodiv'></div>";
+      parent.innerHTML = "<div id='demodiv'>";
     },
     run: function() {
-      var g = new Dygraph(
+      new Dygraph(
               document.getElementById("demodiv"),
-              [
-                [ new Date("2011/11/01"), 100 ],
-                [ new Date("2011/11/02"), 200 ],
-                [ new Date("2011/11/03"), 300 ],
-                [ new Date("2011/11/04"), 100 ],
-                [ new Date("2011/11/05"), 200 ],
-                [ new Date("2011/11/06"), 300 ],
-                [ new Date("2011/11/07"), 200 ],
-                [ new Date("2011/11/08"), 100 ]
-              ],
+              function() {
+                var zp = function(x) { if (x < 10) return "0"+x; else return x; };
+                var r = [];
+                // var r = [date,date2,parabola,line,another line,sine wave];
+                for (var i=1; i<=31; i++) {
+                  r.push([
+                    i,
+                    i + 5,
+                    10 * (i * (31 - i)),
+                    10 * (8 * i),
+                    10 * (250 - 8 * i),
+                    10 * (125 + 125 * Math.sin(0.3 * i))
+                  ])
+                  // r += "200610" + zp(i);
+                  // r += ", 200610" + zp(i);
+                  // r += "," + 10*(i*(31-i));
+                  // r += "," + 10*(8*i);
+                  // r += "," + 10*(250 - 8*i);
+                  // r += "," + 10*(125 + 125 * Math.sin(0.3*i));
+                  // r += "\n";
+                }
+                return r;
+              },
               {
-                labels: [ 'Date', 'Value' ]
+                labels: ['date', 'date2', 'parabola', 'line', 'another line', 'sine wave'],
+                hasSecondaryXAxis: true,
+                strokeWidth: 2,
+                series: {
+                  'parabola': {
+                    axis: 'y2',
+                    xAxis: 'x2',
+                    strokeWidth: 0.0,
+                    drawPoints: true,
+                    pointSize: 4,
+                    highlightCircleSize: 6
+                  },
+                  'line': {
+                    axis: 'y',
+                    xAxis: 'x',
+                    strokeWidth: 1.0,
+                    drawPoints: true,
+                    pointSize: 1.5
+                  },
+                  'sine wave': {
+                    xAxis: 'x',
+                    axis: 'y',
+                    strokeWidth: 3,
+                    highlightCircleSize: 10
+                  }
+                }
               }
           );
-
-      g.setAnnotations([{
-        series: 'Value',
-        x: Date.parse('2011/11/04'),
-        shortText: 'M',
-        text: 'Marker'
-      }]);
-  }
-});
+    }
+  });

@@ -544,7 +544,7 @@ DygraphCanvasRenderer._errorPlotter = function(e) {
  * Proxy for CanvasRenderingContext2D which drops moveTo/lineTo calls which are
  * superfluous. It accumulates all movements which haven't changed the x-value
  * and only applies the two with the most extreme y-values.
- * 
+ *
  * Calls to lineTo/moveTo must have non-decreasing x-values.
  */
 DygraphCanvasRenderer._fastCanvasProxy = function(context) {
@@ -687,7 +687,7 @@ DygraphCanvasRenderer._fillPlotter = function(e) {
   if (e.seriesIndex !== 0) return;
 
   var g = e.dygraph;
-  var setNames = g.getLabels().slice(1);  // remove x-axis
+  var setNames = g.getLabels().slice(g.numXAxes());  // remove x-axis
 
   // getLabels() includes names for invisible series, which are not included in
   // allSeriesPoints. We remove those to make the two match.

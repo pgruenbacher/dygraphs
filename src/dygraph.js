@@ -505,8 +505,38 @@ Dygraph.prototype.rollPeriod = function() {
  * Returns a two-element array: [left, right].
  * If the Dygraph has dates on the x-axis, these will be millis since epoch.
  */
+Dygraph.prototype.x2AxisRange = function() {
+  return this.date2Window_ ? this.date2Window_ : this.x2AxisExtremes();
+};
+
+/**
+ * Returns the currently-visible x-range. This can be affected by zooming,
+ * panning or a call to updateOptions.
+ * Returns a two-element array: [left, right].
+ * If the Dygraph has dates on the x-axis, these will be millis since epoch.
+ */
 Dygraph.prototype.xAxisRange = function() {
   return this.dateWindow_ ? this.dateWindow_ : this.xAxisExtremes();
+};
+
+/**
+ * Returns the lower- and upper-bound x-axis values of the
+ * data set.
+ */
+Dygraph.prototype.x2AxisExtremes = function() {
+  var pad = this.getNumericOption('xRangePad') / this.plotter_.area.w;
+  if (this.numRows() === 0) {
+    return [0 - pad, 1 + pad];
+  }
+  var left = this.rawData_[0][1];
+  var right = this.rawData_[this.rawData_.length - 1][1];
+  if (pad) {
+    // Must keep this in sync with dygraph-layout _evaluateLimits()
+    var range = right - left;
+    left -= range * pad;
+    right += range * pad;
+  }
+  return [left, right];
 };
 
 /**
@@ -697,6 +727,40 @@ Dygraph.prototype.toPercentYCoord = function(y, axis) {
     // yRange[1] - yRange[0] is the scale of the range.
     // (yRange[1] - y) / (yRange[1] - yRange[0]) is the % from the bottom.
     pct = (yRange[1] - y) / (yRange[1] - yRange[0]);
+  }
+  return pct;
+};
+
+/**
+ * Converts an x value to a percentage from the left to the right of
+ * the drawing area.
+ *
+ * If the coordinate represents a value visible on the canvas, then
+ * the value will be between 0 and 1, where 0 is the left of the canvas.
+ * However, this method will return values outside the range, as
+ * values can fall outside the canvas.
+ *
+ * If x is null, this returns null.
+ * @param {number} x The data x-coordinate.
+ * @return {number} A fraction in [0, 1] where 0 = the left edge.
+ */
+Dygraph.prototype.toPercentX2Coord = function(x) {
+  if (x === null) {
+    return null;
+  }
+
+  var xRange = this.x2AxisRange();
+  var pct;
+  var logscale = this.attributes_.getForAxis("logscale", 'x2') ;
+  if (logscale === true) {  // logscale can be null so we test for true explicitly.
+    var logr0 = utils.log10(xRange[0]);
+    var logr1 = utils.log10(xRange[1]);
+    pct = (utils.log10(x) - logr0) / (logr1 - logr0);
+  } else {
+    // x - xRange[0] is unit distance from the left.
+    // xRange[1] - xRange[0] is the scale of the range.
+    // The full expression below is the % from the left.
+    pct = (x - xRange[0]) / (xRange[1] - xRange[0]);
   }
   return pct;
 };
@@ -952,7 +1016,7 @@ Dygraph.prototype.createMouseEventElement_ = function() {
  */
 Dygraph.prototype.setColors_ = function() {
   var labels = this.getLabels();
-  var num = labels.length - 1;
+  var num = labels.length - this.numXAxes();
   this.colors_ = [];
   this.colorsMap_ = {};
 
@@ -967,7 +1031,7 @@ Dygraph.prototype.setColors_ = function() {
     if (!visibility[i]) {
       continue;
     }
-    var label = labels[i + 1];
+    var label = labels[i + this.numXAxes()];
     var colorStr = this.attributes_.getForSeries('color', label);
     if (!colorStr) {
       if (colors) {
@@ -1655,6 +1719,7 @@ Dygraph.prototype.mouseMove_ = function(event) {
  * @private
  */
 Dygraph.prototype.getLeftBoundary_ = function(setIdx) {
+  console.log('boundaryIds_', this.boundaryIds_)
   if (this.boundaryIds_[setIdx]) {
       return this.boundaryIds_[setIdx][0];
   } else {
@@ -1752,7 +1817,7 @@ Dygraph.prototype.updateSelection_ = function(opt_animFraction) {
     // Determine the maximum highlight circle size.
     var maxCircleSize = 0;
     var labels = this.attr_('labels');
-    for (i = 1; i < labels.length; i++) {
+    for (i = this.numXAxes(); i < labels.length; i++) {
       var r = this.getNumericOption('highlightCircleSize', labels[i]);
       if (r > maxCircleSize) maxCircleSize = r;
     }
@@ -1813,6 +1878,7 @@ Dygraph.prototype.setSelection = function(row, opt_seriesName, opt_locked) {
       // for.  If it is, just use it, otherwise search the array for a point
       // in the proper place.
       var setRow = row - this.getLeftBoundary_(setIdx);
+      console.log('points', points, setRow, row, setIdx);
       if (setRow < points.length && points[setRow].idx == row) {
         var point = points[setRow];
         if (point.yval !== null) this.selPoints_.push(point);
@@ -1939,6 +2005,31 @@ Dygraph.prototype.loadedEvent_ = function(data) {
 };
 
 /**
+ * Add ticks on the x2-axis representing years, months, quarters, weeks, or days
+ * @private
+ */
+Dygraph.prototype.addX2Ticks_ = function() {
+  // Determine the correct ticks scale on the x-axis: quarterly, monthly, ...
+  var range;
+  if (this.date2Window_) {
+    range = [this.date2Window_[0], this.date2Window_[1]];
+  } else {
+    range = this.x2AxisExtremes();
+  }
+
+  var xAxisOptionsView = this.optionsViewForAxis_('x2');
+  var x2Ticks = xAxisOptionsView('ticker')(
+      range[0],
+      range[1],
+      this.plotter_.area.w,  // TODO(danvk): should be area.width
+      xAxisOptionsView,
+      this);
+  // var msg = 'ticker(' + range[0] + ', ' + range[1] + ', ' + this.width_ + ', ' + this.attr_('pixelsPerXLabel') + ') -> ' + JSON.stringify(xTicks);
+  // console.log(msg);
+  this.layout_.setX2Ticks(x2Ticks);
+};
+
+/**
  * Add ticks on the x-axis representing years, months, quarters, weeks, or days
  * @private
  */
@@ -2029,13 +2120,14 @@ Dygraph.prototype.predraw_ = function() {
   // Convert the raw data (a 2D array) into the internal format and compute
   // rolling averages.
   this.rolledSeries_ = [null];  // x-axis is the first series and it's special
-  for (var i = 1; i < this.numColumns(); i++) {
+  // for (var i = 1; i < this.numColumns(); i++) {
+  for (var i = this.numXAxes(); i < this.numColumns(); i++) {
     // var logScale = this.attr_('logscale', i); // TODO(klausw): this looks wrong // konigsberg thinks so too.
     var series = this.dataHandler_.extractSeries(this.rawData_, i, this.attributes_);
     if (this.rollPeriod_ > 1) {
       series = this.dataHandler_.rollingAverage(series, this.rollPeriod_, this.attributes_);
     }
-
+    console.log('i', i, series);
     this.rolledSeries_.push(series);
   }
 
@@ -2256,7 +2348,7 @@ Dygraph.prototype.gatherDatasets_ = function(rolledSeries, dateWindow) {
       boundaryIds[seriesIdx-1] = [0, series.length-1];
     }
 
-    var seriesName = this.attr_("labels")[seriesIdx];
+    var seriesName = this.attr_("labels")[seriesIdx + this.numXAxes() - 1];
     var seriesExtremes = this.dataHandler_.getExtremeYValues(series,
         dateWindow, this.getBooleanOption("stepPlot",seriesName));
 
@@ -2297,8 +2389,10 @@ Dygraph.prototype.drawGraph_ = function() {
   this.setColors_();
   this.attrs_.pointSize = 0.5 * this.getNumericOption('highlightCircleSize');
 
+  console.log('this.rolledSeries_', this.rolledSeries_);
   var packed = this.gatherDatasets_(this.rolledSeries_, this.dateWindow_);
   var points = packed.points;
+  console.log('packed', packed);
   var extremes = packed.extremes;
   this.boundaryIds_ = packed.boundaryIds;
 
@@ -2309,9 +2403,9 @@ Dygraph.prototype.drawGraph_ = function() {
   }
   var dataIdx = 0;
   for (var i = 1; i < points.length; i++) {
-    this.setIndexByName_[labels[i]] = i;
+    this.setIndexByName_[labels[i + (this.numXAxes() === 2 ? 1 : 0)]] = i;
     if (!this.visibility()[i - 1]) continue;
-    this.layout_.addDataset(labels[i], points[i]);
+    this.layout_.addDataset(labels[i + (this.numXAxes() === 2 ? 1 : 0)], points[i]);
     this.datasetIndex_[i] = dataIdx++;
   }
 
@@ -2319,6 +2413,9 @@ Dygraph.prototype.drawGraph_ = function() {
   this.layout_.setYAxes(this.axes_);
 
   this.addXTicks_();
+  if (this.numXAxes() === 2) {
+    this.addX2Ticks_();
+  }
 
   // Save the X axis zoomed status as the updateOptions call will tend to set it erroneously
   var tmp_zoomed_x = this.zoomed_x_;
@@ -2441,6 +2538,14 @@ Dygraph.prototype.computeYAxes_ = function() {
       }
     }
   }
+};
+
+/**
+ * Returns the number of y-axes on the chart.
+ * @return {number} the number of axes.
+ */
+Dygraph.prototype.numXAxes = function() {
+  return this.attributes_.numXAxes();
 };
 
 /**
@@ -2911,6 +3016,23 @@ Dygraph.prototype.parseArray_ = function(data) {
         return null;
       }
       parsedData[i][0] = parsedData[i][0].getTime();
+    }
+    // Assume they're all dates.
+    if (this.attrs_.user_.hasSecondaryXAxis) {
+      for (i = 0; i < data.length; i++) {
+        if (parsedData[i].length === 0) {
+          console.error("Row " + (1 + i) + " of data is empty");
+          return null;
+        }
+        if (parsedData[i][1] === null ||
+            typeof(parsedData[i][1].getTime) != 'function' ||
+            isNaN(parsedData[i][1].getTime())) {
+          console.error("x value in row " + (1 + i) + " is not a Date");
+          return null;
+        }
+        parsedData[i][1] = parsedData[i][1].getTime();
+      }
+
     }
     return parsedData;
   } else {

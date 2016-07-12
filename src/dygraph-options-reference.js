@@ -336,6 +336,12 @@ OPTIONS_REFERENCE =  // <JSON>
     "type": "boolean",
     "description": "Whether to show the legend upon mouseover."
   },
+  "xAxis": {
+    "default": "(none)",
+    "labels": ["Axis display"],
+    "type": "string",
+    "description": "Set to either 'x1' or 'x2' to assign a series to a y-axis (primary or secondary). Must be set per-series."
+  },
   "axis": {
     "default": "(none)",
     "labels": ["Axis display"],
@@ -568,6 +574,12 @@ OPTIONS_REFERENCE =  // <JSON>
     "labels": ["Interactive Elements", "Rolling Averages"],
     "type": "boolean",
     "description": "If the rolling average period text box should be shown."
+  },
+  "hasSecondaryXAxis": {
+    "default": "false",
+    "labels": ["Axis Display"],
+    "type": "boolean",
+    "description": "Specify whether secondary x axis is allowed"
   },
   "sigma": {
     "default": "2.0",

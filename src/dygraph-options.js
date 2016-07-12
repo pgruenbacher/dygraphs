@@ -82,6 +82,8 @@ DygraphOptions.AXIS_STRING_MAPPINGS_ = {
   'Y' : 0,
   'y1' : 0,
   'Y1' : 0,
+  'x': 1,
+  'X': 1,
   'x2' : 1,
   'X2' : 1,
   'y2' : 1,
@@ -123,11 +125,16 @@ DygraphOptions.prototype.reparseSeries = function() {
   if (!labels) {
     return; // -- can't do more for now, will parse after getting the labels.
   }
+  console.log('this', this);
 
-  this.labels_ = labels.slice(1);
+  if (this.user_.hasSecondaryXAxis) {
+    this.labels_ = labels.slice(2);
+  } else {
+    this.labels_ = labels.slice(1);
+  }
 
   this.yAxes_ = [ { series : [], options : {}} ]; // Always one axis at least.
-  this.xAxis_ = [{ options : {} }];
+  this.xAxis_ = [{ series: [], options : {} }];
   this.series_ = {};
 
   // Series are specified in the series element:
@@ -147,12 +154,26 @@ DygraphOptions.prototype.reparseSeries = function() {
   for (var idx = 0; idx < this.labels_.length; idx++) {
     var seriesName = this.labels_[idx];
     var optionsForSeries = seriesDict[seriesName] || {};
+
+    var xAxis = DygraphOptions.axisToIndex_(optionsForSeries["xAxis"]);
+
     var yAxis = DygraphOptions.axisToIndex_(optionsForSeries["axis"]);
 
     this.series_[seriesName] = {
       idx: idx,
       yAxis: yAxis,
+      xAxis: xAxis,
       options : optionsForSeries };
+
+    if (!this.xAxis_[xAxis]) {
+      this.xAxis_[xAxis] =  {
+        series : [ seriesName ],
+        options : {}
+      };
+    } else {
+      // console.log('xAxis_', xAxis);
+      this.xAxis_[xAxis].series.push(seriesName);
+    }
 
     if (!this.yAxes_[yAxis]) {
       this.yAxes_[yAxis] =  {
@@ -293,7 +314,6 @@ DygraphOptions.prototype.getForSeries = function(name, series) {
   if (!this.series_.hasOwnProperty(series)) {
     throw "Unknown series: " + series;
   }
-
   var seriesObj = this.series_[series];
   var seriesOptions = seriesObj["options"];
   if (seriesOptions.hasOwnProperty(name)) {
@@ -301,6 +321,14 @@ DygraphOptions.prototype.getForSeries = function(name, series) {
   }
 
   return this.getForAxis(name, seriesObj["yAxis"]);
+};
+
+/**
+ * Returns the number of y-axes on the chart.
+ * @return {number} the number of axes.
+ */
+DygraphOptions.prototype.numXAxes = function() {
+  return this.xAxis_.length;
 };
 
 /**

@@ -251,6 +251,18 @@ axes.prototype.willDrawChart = function(e) {
     context.closePath();
     context.stroke();
 
+    // if there's a secondary x-axis, draw a horizontal line for that, too.
+    if (g.numXAxes() == 2) {
+      context.strokeStyle = g.getOptionForAxis('axisLineColor', 'x2');
+      context.lineWidth = g.getOptionForAxis('axisLineWidth', 'x2');
+      context.beginPath();
+      // PAUL: added + 1 so it fits in the canvas ...
+      context.moveTo(halfDown(area.x), halfDown(area.y + 1));
+      context.lineTo(halfDown(area.x + area.w), halfDown(area.y + 1));
+      context.closePath();
+      context.stroke();
+    }
+
     // if there's a secondary y-axis, draw a vertical line for that, too.
     if (g.numAxes() == 2) {
       context.strokeStyle = g.getOptionForAxis('axisLineColor', 'y2');
@@ -269,7 +281,8 @@ axes.prototype.willDrawChart = function(e) {
       for (i = 0; i < layout.xticks.length; i++) {
         tick = layout.xticks[i];
         x = area.x + tick[0] * area.w;
-        y = area.y + area.h;
+        // y = area.y + area.h;
+        y = area.y - 20;
 
         /* Tick marks are currently clipped, so don't bother drawing them.
         context.beginPath();
@@ -296,7 +309,6 @@ axes.prototype.willDrawChart = function(e) {
         label.style.left = left + 'px';
         label.style.width = getAxisOption('axisLabelWidth') + 'px';
         containerDiv.appendChild(label);
-        console.log('push x2 label', label);
         this.xlabels_.push(label);
       }
     }
