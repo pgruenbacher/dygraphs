@@ -46,6 +46,12 @@ Dygraph.OPTIONS_REFERENCE =  // <JSON>
     "type": "boolean",
     "description": "Draw a small dot at each point, in addition to a line going through the point. This makes the individual data points easier to see, but can increase visual clutter in the chart. The small dot can be replaced with a custom rendering by supplying a <a href='#drawPointCallback'>drawPointCallback</a>."
   },
+  "secondaryXAxisFormatter":{
+    "default": "null",
+    "labels": [],
+    "type": "function(arr)",
+    "description": "A second axis formatter"
+  },
   "drawGapEdgePoints": {
     "default": "false",
     "labels": ["Data Line display"],

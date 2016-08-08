@@ -101,7 +101,7 @@ axes.prototype.willDrawChart = function(e) {
       !g.getOptionForAxis('drawAxis', 'y2')) {
     return;
   }
-  
+
   // Round pixels to half-integer boundaries for crisper drawing.
   function halfUp(x)  { return Math.round(x) + 0.5; }
   function halfDown(y){ return Math.round(y) - 0.5; }
@@ -261,6 +261,75 @@ axes.prototype.willDrawChart = function(e) {
       context.stroke();
     }
   }
+  // if there's a secondary x-axis, draw a horizontal line for that, too.
+  if (g.attr_('secondaryXAxisFormatter') == 2) {
+    context.strokeStyle = g.getOptionForAxis('axisLineColor', 'x');
+    context.lineWidth = g.getOptionForAxis('axisLineWidth', 'x');
+    context.beginPath();
+    // PAUL: added + 1 so it fits in the canvas ...
+    context.moveTo(halfDown(area.x), halfDown(area.y + 1));
+    context.lineTo(halfDown(area.x + area.w), halfDown(area.y + 1));
+    context.closePath();
+    context.stroke();
+  }
+  console.log('axes!');
+  if (g.attr_('secondaryXAxisFormatter')) {
+    var secondaryXAxisFormatter = g.attr_('secondaryXAxisFormatter');
+    console.log('s', secondaryXAxisFormatter);
+    if (layout.xticks) {
+      var getAxisOption = makeOptionGetter('x');
+      for (i = 0; i < layout.xticks.length; i++) {
+        tick = layout.xticks[i];
+        x = area.x + tick[0] * area.w;
+        // y = area.y + area.h;
+        y = area.y - 20;
+
+        /* Tick marks are currently clipped, so don't bother drawing them.
+        context.beginPath();
+        context.moveTo(halfUp(x), halfDown(y));
+        context.lineTo(halfUp(x), halfDown(y + this.attr_('axisTickSize')));
+        context.closePath();
+        context.stroke();
+        */
+
+        label = makeDiv(tick[1], 'x', 'x');
+        label.style.textAlign = 'center';
+        label.style.top = (y + getAxisOption('axisTickSize')) + 'px';
+
+        var left = (x - getAxisOption('axisLabelWidth')/2);
+        if (left + getAxisOption('axisLabelWidth') > canvasWidth) {
+          left = canvasWidth - getAxisOption('axisLabelWidth');
+          label.style.textAlign = 'right';
+        }
+        if (left < 0) {
+          left = 0;
+          label.style.textAlign = 'left';
+        }
+
+        label.style.left = left + 'px';
+        label.style.width = getAxisOption('axisLabelWidth') + 'px';
+        containerDiv.appendChild(label);
+        this.xlabels_.push(label);
+      }
+    }
+
+    context.strokeStyle = g.getOptionForAxis('axisLineColor', 'x');
+    context.lineWidth = g.getOptionForAxis('axisLineWidth', 'x');
+    context.beginPath();
+    var axisY;
+    if (g.getOption('drawAxesAtZero')) {
+      var r = g.toPercentYCoord(0, 0);
+      if (r > 1 || r < 0) r = 1;
+      axisY = halfDown(area.y + r * area.h);
+    } else {
+      axisY = halfDown(area.y + area.h);
+    }
+    context.moveTo(halfUp(area.x), axisY);
+    context.lineTo(halfUp(area.x + area.w), axisY);
+    context.closePath();
+    context.stroke();
+  }
+
 
   if (g.getOptionForAxis('drawAxis', 'x')) {
     if (layout.xticks) {
